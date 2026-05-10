@@ -1028,7 +1028,7 @@ body {
   padding: 8px;
   background: #fff;
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: 1fr auto;
   gap: 8px;
   align-items: end;
 }

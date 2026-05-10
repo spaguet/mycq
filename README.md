@@ -27,6 +27,7 @@ Current MVP status:
 - Share own UIN by copy, native share, or downloadable contact file.
 - Responsive desktop/mobile layout with a mobile contact-list/chat switch.
 - Restore modal and contact-file import.
+- Faster relay publishing and polling; removed manual sync and temporary emoji button.
 - ICQ-like skeuomorphic UI.
 
 Next steps:

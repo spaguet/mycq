@@ -307,7 +307,6 @@ function renderMessenger() {
             <div class="identity-line">${escapeHtml(state.profile.npub)}</div>
             <div class="dev-toolbar">
               <button class="classic-button small" type="button" id="shareContactButton">Поделиться</button>
-              <button class="classic-button small secondary" type="button" id="syncButton">Синхр.</button>
               <button class="classic-button small secondary" type="button" id="settingsButton">Настройки</button>
               <button class="classic-button small secondary" type="button" id="lockButton">Выйти</button>
             </div>
@@ -325,7 +324,7 @@ function renderMessenger() {
               </div>
             </div>
             <div class="chat-actions">
-              ${active ? '<button class="delete-contact-button" type="button" id="deleteContactButton">Удалить контакт</button>' : ''}
+              ${active ? '<button class="delete-contact-button" type="button" id="renameContactButton">Переименовать</button><button class="delete-contact-button" type="button" id="deleteContactButton">Удалить контакт</button>' : ''}
             </div>
           </header>
 
@@ -334,7 +333,6 @@ function renderMessenger() {
           </div>
 
           <form class="composer" id="messageForm">
-            <button class="composer-icon" type="button" data-smiley="☺">☺</button>
             <textarea class="message-input" name="message" rows="1" placeholder="${canChat ? 'Введите сообщение...' : 'Сначала авторизуйте контакт'}" ${canChat ? '' : 'disabled'}></textarea>
             <button class="send-button" type="submit" ${canChat ? '' : 'disabled'}>↗</button>
           </form>
@@ -345,7 +343,6 @@ function renderMessenger() {
 
   document.querySelector('#addContactButton').addEventListener('click', addContact);
   document.querySelector('#shareContactButton').addEventListener('click', openShareContact);
-  document.querySelector('#syncButton').addEventListener('click', syncNow);
   document.querySelector('#settingsButton').addEventListener('click', openSettings);
   document.querySelector('#lockButton').addEventListener('click', lockProfile);
   document.querySelector('#editProfileButton').addEventListener('click', editProfileName);
@@ -354,6 +351,11 @@ function renderMessenger() {
   messageForm.message.addEventListener('keydown', handleMessageInputKeydown);
 
   document.querySelector('#deleteContactButton')?.addEventListener('click', deleteActiveContact);
+  document.querySelector('#renameContactButton')?.addEventListener('click', () => {
+    if (state.activeContact) {
+      renameContact(state.activeContact.pubkey);
+    }
+  });
   document.querySelector('#mobileBackButton')?.addEventListener('click', () => {
     state.mobileView = 'contacts';
     render();
@@ -381,14 +383,6 @@ function renderMessenger() {
     });
     item.addEventListener('dblclick', () => {
       renameContact(item.dataset.pubkey);
-    });
-  });
-
-  document.querySelectorAll('[data-smiley]').forEach((button) => {
-    button.addEventListener('click', () => {
-      const input = document.querySelector('.message-input');
-      input.value = `${input.value}${button.dataset.smiley} `;
-      input.focus();
     });
   });
 
@@ -834,27 +828,29 @@ async function handleSendMessage(event) {
   form.message.value = '';
   setRelayStatus('sending');
 
-  const message = {
-    id: crypto.randomUUID(),
-    contactPubkey: state.activeContact.pubkey,
-    direction: 'out',
-    from: state.profile.nickname,
-    text,
-    createdAt: new Date().toISOString(),
-    status: 'sending',
-  };
-
-  state.messages.push(message);
-  saveJson(MESSAGES_KEY, state.messages);
-  render();
+  let message = null;
 
   try {
     const event = await createEncryptedDirectMessage(state.activeContact.pubkey, text);
+    message = {
+      id: event.id,
+      eventId: event.id,
+      contactPubkey: state.activeContact.pubkey,
+      direction: 'out',
+      from: state.profile.nickname,
+      text,
+      createdAt: new Date(event.created_at * 1000).toISOString(),
+      status: 'sending',
+    };
+
+    state.seenEventIds.add(event.id);
+    state.messages.push(message);
+    saveJson(MESSAGES_KEY, state.messages);
+    render();
+
     await publishEvent(event);
 
-    message.eventId = event.id;
     message.status = 'sent';
-    state.seenEventIds.add(event.id);
     saveJson(MESSAGES_KEY, state.messages);
     notifyContact(state.activeContact).catch((err) => {
       console.warn('ntfy notification failed:', err);
@@ -862,8 +858,10 @@ async function handleSendMessage(event) {
     setRelayStatus('online');
     render();
   } catch (err) {
-    message.status = 'failed';
-    saveJson(MESSAGES_KEY, state.messages);
+    if (message) {
+      message.status = 'failed';
+      saveJson(MESSAGES_KEY, state.messages);
+    }
     setRelayStatus('error: ' + getErrorMessage(err));
     render();
   }
@@ -1169,7 +1167,7 @@ function ensureNostrSync() {
       }
     );
     fetchRecentMessages();
-    state.syncTimer = window.setInterval(fetchRecentMessages, 15000);
+    state.syncTimer = window.setInterval(fetchRecentMessages, 6000);
   } catch (err) {
     setRelayStatus('error: ' + getErrorMessage(err));
   }
@@ -1245,7 +1243,7 @@ async function fetchRecentMessages() {
 
   try {
     const batches = await Promise.all(filters.map((filter) => (
-      state.pool.querySync(state.profile.relays, filter, { maxWait: 5000 })
+      state.pool.querySync(state.profile.relays, filter, { maxWait: 2500 })
     )));
     const events = batches.flat();
 
@@ -1601,17 +1599,15 @@ async function publishEvent(event) {
     throw new Error('No publish promises returned by relay pool.');
   }
 
-  const settled = await Promise.allSettled(
-    promises.map((promise) => withTimeout(Promise.resolve(promise), 8000))
-  );
-  const successCount = settled.filter((item) => item.status === 'fulfilled').length;
-
-  if (successCount === 0) {
-    const reason = settled.find((item) => item.status === 'rejected');
-    throw new Error(reason ? getErrorMessage(reason.reason) : 'All relays rejected the message.');
+  try {
+    await Promise.any(
+      promises.map((promise) => withTimeout(Promise.resolve(promise), 4000))
+    );
+  } catch (err) {
+    throw new Error('No relay accepted the event quickly enough.');
   }
 
-  return successCount;
+  return 1;
 }
 
 function getFirstPTag(event) {
