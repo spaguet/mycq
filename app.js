@@ -303,10 +303,9 @@ function renderMessenger() {
           </ul>
 
           <div class="identity-box">
-            <strong>Мой MyCQ UIN</strong>
-            <div class="identity-line">${escapeHtml(state.profile.npub)}</div>
             <div class="dev-toolbar">
-              <button class="classic-button small" type="button" id="shareContactButton">Поделиться</button>
+              <button class="classic-button small" type="button" id="shareContactButton">Мой MyCQ UIN</button>
+              <button class="classic-button small secondary" type="button" id="browserNotificationsButton">${escapeHtml(getBrowserNotificationsButtonText())}</button>
               <button class="classic-button small secondary" type="button" id="settingsButton">Настройки</button>
               <button class="classic-button small secondary" type="button" id="lockButton">Выйти</button>
             </div>
@@ -343,6 +342,7 @@ function renderMessenger() {
 
   document.querySelector('#addContactButton').addEventListener('click', addContact);
   document.querySelector('#shareContactButton').addEventListener('click', openShareContact);
+  document.querySelector('#browserNotificationsButton').addEventListener('click', toggleBrowserNotifications);
   document.querySelector('#settingsButton').addEventListener('click', openSettings);
   document.querySelector('#lockButton').addEventListener('click', lockProfile);
   document.querySelector('#editProfileButton').addEventListener('click', editProfileName);
@@ -765,7 +765,6 @@ async function acceptContact(pubkey) {
       nickname: state.profile.nickname,
       pubkey: state.profile.pubkey,
       npub: state.profile.npub,
-      ntfyTopic: getOwnNotificationTopic(),
       createdAt: new Date().toISOString(),
     });
     setRelayStatus('online');
@@ -796,7 +795,6 @@ async function sendContactRequest(pubkey) {
       nickname: state.profile.nickname,
       pubkey: state.profile.pubkey,
       npub: state.profile.npub,
-      ntfyTopic: getOwnNotificationTopic(),
       createdAt: new Date().toISOString(),
     });
     setRelayStatus('online');
@@ -852,9 +850,6 @@ async function handleSendMessage(event) {
 
     message.status = 'sent';
     saveJson(MESSAGES_KEY, state.messages);
-    notifyContact(state.activeContact).catch((err) => {
-      console.warn('ntfy notification failed:', err);
-    });
     setRelayStatus('online');
     render();
   } catch (err) {
@@ -950,7 +945,7 @@ async function openSettings() {
         <header class="settings-header">
           <div>
             <h2 id="settingsTitle">Настройки MyCQ</h2>
-            <p>Профиль, уведомления и служебные действия.</p>
+            <p>Профиль и служебные действия.</p>
           </div>
           <button class="icon-button" type="button" id="closeSettingsButton">×</button>
         </header>
@@ -966,19 +961,11 @@ async function openSettings() {
             <input readonly value="${escapeHtml(state.profile.npub)}">
           </label>
 
-          <label class="field">
-            ntfy topic
-            <input id="settingsNtfyTopic" value="${escapeHtml(getOwnNotificationTopic())}" placeholder="mycq-...">
-          </label>
-
-          <div class="notice">
-            Topic нужен для push-уведомлений. В приложении ntfy на телефоне подпишитесь на такой же topic.
-          </div>
+          <div class="notice">Уведомления работают локально в браузере/PWA, когда MyCQ открыт или находится в фоне.</div>
         </div>
 
         <footer class="settings-actions">
           <button class="classic-button" type="button" id="saveSettingsButton">Сохранить</button>
-          <button class="classic-button secondary" type="button" id="testNtfyButton">Тест ntfy</button>
           <button class="classic-button secondary" type="button" id="settingsBackupButton">Backup</button>
           <button class="classic-button secondary" type="button" id="settingsSyncButton">Sync</button>
         </footer>
@@ -993,7 +980,6 @@ async function openSettings() {
     }
   });
   document.querySelector('#saveSettingsButton').addEventListener('click', saveSettingsFromModal);
-  document.querySelector('#testNtfyButton').addEventListener('click', testSettingsNtfy);
   document.querySelector('#settingsBackupButton').addEventListener('click', showBackup);
   document.querySelector('#settingsSyncButton').addEventListener('click', syncNow);
   document.querySelector('#settingsNickname').focus();
@@ -1005,7 +991,6 @@ function closeSettingsModal() {
 
 async function saveSettingsFromModal() {
   const nickname = document.querySelector('#settingsNickname').value.trim();
-  const ntfyTopic = normalizeNtfyTopic(document.querySelector('#settingsNtfyTopic').value);
 
   if (!nickname) {
     alert('Имя профиля не может быть пустым.');
@@ -1013,8 +998,6 @@ async function saveSettingsFromModal() {
   }
 
   state.profile.nickname = nickname;
-  state.profile.ntfyTopic = ntfyTopic;
-  state.profile.ntfyEnabled = Boolean(ntfyTopic);
   saveJson(PROFILE_KEY, state.profile);
 
   try {
@@ -1027,22 +1010,6 @@ async function saveSettingsFromModal() {
 
   closeSettingsModal();
   render();
-}
-
-async function testSettingsNtfy() {
-  const topic = normalizeNtfyTopic(document.querySelector('#settingsNtfyTopic').value);
-
-  if (!topic) {
-    alert('Сначала укажите ntfy topic.');
-    return;
-  }
-
-  try {
-    await sendNtfyNotification(topic, 'Тестовое уведомление MyCQ');
-    alert('Тестовое уведомление отправлено.');
-  } catch (err) {
-    alert('Тестовое уведомление не отправилось: ' + getErrorMessage(err));
-  }
 }
 
 function showBackup() {
@@ -1058,46 +1025,6 @@ function lockProfile() {
   stopNostrSync();
   state.secretHex = null;
   render();
-}
-
-async function configureNotifications() {
-  const currentTopic = state.profile.ntfyTopic || generateNtfyTopic();
-  const topic = prompt(
-    'Topic для ntfy.sh. Установите приложение ntfy на телефон и подпишитесь на этот topic. Оставьте пустым, чтобы отключить уведомления.',
-    currentTopic
-  );
-
-  if (topic === null) {
-    return;
-  }
-
-  const normalizedTopic = normalizeNtfyTopic(topic);
-  state.profile.ntfyTopic = normalizedTopic;
-  state.profile.ntfyEnabled = Boolean(normalizedTopic);
-  saveJson(PROFILE_KEY, state.profile);
-  render();
-
-  if (normalizedTopic) {
-    let testResult = 'Тестовое уведомление отправлено.';
-
-    try {
-      await sendNtfyNotification(normalizedTopic, 'Тестовое уведомление MyCQ');
-    } catch (err) {
-      testResult = 'Тестовое уведомление не отправилось: ' + getErrorMessage(err);
-    }
-
-    await sendProfileUpdateToAuthorizedContacts();
-    alert(
-      'Уведомления включены.\n\n' +
-      '1. Установите ntfy на телефон.\n' +
-      '2. Подпишитесь на topic:\n' +
-      normalizedTopic + '\n\n' +
-      'Проверка в браузере:\n' +
-      `https://ntfy.sh/${normalizedTopic}\n\n` +
-      testResult + '\n\n' +
-      'Если вы подписались на телефоне после этого окна, нажмите Notify еще раз для повторного теста.'
-    );
-  }
 }
 
 function resetProfile() {
@@ -1306,6 +1233,7 @@ async function handleNostrEvent(event) {
 
     state.messages.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
     saveJson(MESSAGES_KEY, state.messages);
+    showBrowserNotification(contact, text);
     render();
   } catch (err) {
     console.warn('Failed to decrypt Nostr DM:', err);
@@ -1318,7 +1246,6 @@ function handleProtocolMessage(message, peerPubkey, event) {
       nickname: message.nickname || 'Contact',
       pubkey: peerPubkey,
       npub: nip19.npubEncode(peerPubkey),
-      notificationTopic: normalizeNtfyTopic(message.ntfyTopic || ''),
       status: 'Pending',
       requestDirection: 'incoming',
       color: '#c31e1e',
@@ -1332,7 +1259,6 @@ function handleProtocolMessage(message, peerPubkey, event) {
       nickname: message.nickname || 'Contact',
       pubkey: peerPubkey,
       npub: nip19.npubEncode(peerPubkey),
-      notificationTopic: normalizeNtfyTopic(message.ntfyTopic || ''),
       status: 'Authorized',
       requestDirection: 'accepted',
       color: '#c31e1e',
@@ -1350,7 +1276,6 @@ function handleProtocolMessage(message, peerPubkey, event) {
       nickname: message.nickname || 'Contact',
       pubkey: peerPubkey,
       npub: nip19.npubEncode(peerPubkey),
-      notificationTopic: normalizeNtfyTopic(message.ntfyTopic || ''),
       status: 'Authorized',
       requestDirection: 'accepted',
       color: '#c31e1e',
@@ -1456,7 +1381,6 @@ async function sendProfileUpdate(receiverPubkey) {
     nickname: state.profile.nickname,
     pubkey: state.profile.pubkey,
     npub: state.profile.npub,
-    ntfyTopic: getOwnNotificationTopic(),
     createdAt: new Date().toISOString(),
   });
 }
@@ -1653,70 +1577,64 @@ function getMessageStatusText(status) {
   return statusMap[status] || '';
 }
 
-async function notifyContact(contact) {
-  if (!contact || !contact.notificationTopic) {
-    return;
-  }
-
-  const topic = normalizeNtfyTopic(contact.notificationTopic);
-
-  if (!topic) {
-    return;
-  }
-
-  await sendNtfyNotification(topic, `Новое сообщение MyCQ от ${state.profile.nickname}`);
-}
-
-async function sendNtfyNotification(topic, text) {
-  const url = new URL(`https://ntfy.sh/${encodeURIComponent(topic)}`);
-  url.searchParams.set('title', 'MyCQ');
-  url.searchParams.set('tags', 'incoming_envelope');
-  url.searchParams.set('priority', 'default');
-
-  const response = await fetch(url.toString(), {
-    method: 'POST',
-    body: text,
-  });
-
-  if (!response.ok) {
-    throw new Error(`ntfy HTTP ${response.status}`);
-  }
-}
-
 function isAuthorizedContact(contact) {
   return Boolean(contact) && (contact.status || 'Authorized') === 'Authorized';
 }
 
-function getOwnNotificationTopic() {
-  return state.profile && state.profile.ntfyEnabled
-    ? normalizeNtfyTopic(state.profile.ntfyTopic || '')
-    : '';
+async function toggleBrowserNotifications() {
+  if (!('Notification' in window)) {
+    alert('Этот браузер не поддерживает локальные уведомления.');
+    return;
+  }
+
+  if (state.profile.browserNotificationsEnabled) {
+    state.profile.browserNotificationsEnabled = false;
+    saveJson(PROFILE_KEY, state.profile);
+    render();
+    return;
+  }
+
+  const permission = Notification.permission === 'granted'
+    ? 'granted'
+    : await Notification.requestPermission();
+
+  if (permission !== 'granted') {
+    alert('Браузер не разрешил уведомления.');
+    return;
+  }
+
+  state.profile.browserNotificationsEnabled = true;
+  saveJson(PROFILE_KEY, state.profile);
+  render();
 }
 
-function getNotificationStatusText() {
-  const topic = getOwnNotificationTopic();
-  return topic ? `ntfy.sh/${topic}` : 'off';
+function getBrowserNotificationsButtonText() {
+  return state.profile && state.profile.browserNotificationsEnabled
+    ? 'Запретить уведомления'
+    : 'Разрешить уведомления';
 }
 
-function generateNtfyTopic() {
-  const bytes = crypto.getRandomValues(new Uint8Array(12));
-  return `mycq-${bytesToHex(bytes)}`;
-}
+function showBrowserNotification(contact, text) {
+  if (!state.profile.browserNotificationsEnabled || !('Notification' in window) || Notification.permission !== 'granted') {
+    return;
+  }
 
-function normalizeNtfyTopic(value) {
-  return String(value || '')
-    .trim()
-    .replace(/^https?:\/\/ntfy\.sh\//i, '')
-    .replace(/[^a-zA-Z0-9_-]/g, '')
-    .slice(0, 96);
+  if (document.visibilityState === 'visible') {
+    return;
+  }
+
+  new Notification('MyCQ', {
+    body: `${contact.nickname}: ${text}`,
+    tag: `mycq-${contact.pubkey}`,
+    icon: 'icons/icon.svg',
+  });
 }
 
 function getContactStatusText(contact) {
   const npub = contact.npub || nip19.npubEncode(contact.pubkey);
-  const notify = contact.notificationTopic ? ' · notify' : '';
 
   if ((contact.status || 'Authorized') === 'Authorized') {
-    return `Authorized${notify} · ${npub}`;
+    return `Authorized · ${npub}`;
   }
 
   if (contact.status === 'Request failed') {

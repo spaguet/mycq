@@ -14,15 +14,15 @@ Current MVP status:
 - Self-contact protection.
 - ICQ-like contact authorization requests.
 - Public Nostr contact-request events for reliable discovery.
-- Optional `ntfy.sh` notifications without message text.
+- Local browser/PWA notifications while MyCQ is open or in the background.
 - Profile restore from `nsec...` backup key.
 - Enter-to-send with Shift+Enter for a new line.
 - Nostr profile metadata publishing.
 - Contact profile metadata sync from Nostr.
 - Profile nickname editing and local contact renaming.
 - Authorized contacts are protected from old pending request replays.
-- Compact settings entry for profile, ntfy, backup, and sync.
-- Settings modal for profile name, UIN, ntfy tests, backup, and sync.
+- Compact settings entry for profile, backup, and sync.
+- Settings modal for profile name, UIN, backup, and sync.
 - Add contact modal.
 - Share own UIN by copy, native share, or downloadable contact file.
 - Responsive desktop/mobile layout with a mobile contact-list/chat switch.
@@ -97,4 +97,4 @@ Important limitation: if the user loses both the password and backup key, the ac
 
 Messages are encrypted before publishing to Nostr relays. Relay operators can see metadata such as event time, sender public key, receiver public key, and relay usage, but not the message body.
 
-Optional `ntfy.sh` notifications contain only a generic "new MyCQ message" text and the sender nickname. The message body is never sent to ntfy.
+Browser/PWA notifications are local to the user's device and do not require MyCQ to store push subscriptions.
