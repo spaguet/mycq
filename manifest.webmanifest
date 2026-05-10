@@ -1,0 +1,18 @@
+{
+  "name": "MyCQ",
+  "short_name": "MyCQ",
+  "description": "A nostalgic ICQ-like PWA messenger over decentralized protocols.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#dff2c2",
+  "theme_color": "#bce987",
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
