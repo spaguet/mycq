@@ -401,6 +401,36 @@ button {
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.28));
 }
 
+.app-logo {
+  display: inline-block;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
+.app-logo-small {
+  width: 24px;
+  height: 24px;
+}
+
+.auth-logo {
+  width: 78px;
+  height: 78px;
+  border-radius: 18px;
+  filter: drop-shadow(0 10px 22px rgba(31, 50, 31, 0.14));
+}
+
+.brand-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+}
+
+.chat-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+}
+
 .notice {
   border: 1px solid #e0c45b;
   border-radius: 8px;

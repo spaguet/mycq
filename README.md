@@ -28,6 +28,7 @@ Current MVP status:
 - Responsive desktop/mobile layout with a mobile contact-list/chat switch.
 - Restore modal and contact-file import.
 - Faster relay publishing and polling; removed manual sync and temporary emoji button.
+- Custom MyCQ PNG logo wired into app, manifest, favicon, and notifications.
 - ICQ-like skeuomorphic UI.
 
 Next steps:

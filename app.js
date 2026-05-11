@@ -73,7 +73,7 @@ function renderOnboarding() {
   app.innerHTML = `
     <section class="auth-shell">
       <div class="auth-hero">
-        <span class="flower auth-flower" aria-hidden="true"></span>
+        <img class="app-logo auth-logo" src="icons/mycq-logo.png" alt="">
         <h1>MyCQ</h1>
         <p>Личный децентрализованный мессенджер с зашифрованными сообщениями и контактами через Nostr.</p>
       </div>
@@ -233,7 +233,7 @@ function renderLogin() {
   app.innerHTML = `
     <section class="auth-shell">
       <div class="auth-hero">
-        <span class="flower auth-flower" aria-hidden="true"></span>
+        <img class="app-logo auth-logo" src="icons/mycq-logo.png" alt="">
         <h1>MyCQ</h1>
         <p>Профиль хранится локально. Введите пароль, чтобы расшифровать ключ.</p>
       </div>
@@ -283,7 +283,7 @@ function renderMessenger() {
         <aside class="contacts-panel">
           <div class="contacts-header">
             <div class="brand">
-              <span class="flower brand-flower" aria-hidden="true"></span>
+              <img class="app-logo brand-logo" src="icons/mycq-logo.png" alt="">
               <strong>MyCQ</strong>
             </div>
             <button class="primary-action" type="button" id="addContactButton">+ Добавить</button>
@@ -316,7 +316,7 @@ function renderMessenger() {
           <header class="chat-header">
             <div class="chat-identity">
               <button class="mobile-back-button" type="button" id="mobileBackButton">‹</button>
-              <span class="flower chat-flower" aria-hidden="true"></span>
+              <img class="app-logo chat-logo" src="icons/mycq-logo.png" alt="">
               <div>
                 <h2 class="chat-title">${active ? escapeHtml(active.nickname) : 'Нет контакта'}</h2>
                 <span class="relay-status" id="relayStatus">${active ? escapeHtml(getContactOnlineText(active)) : escapeHtml(getRelayStatusText())}</span>
@@ -1626,7 +1626,7 @@ function showBrowserNotification(contact, text) {
   new Notification('MyCQ', {
     body: `${contact.nickname}: ${text}`,
     tag: `mycq-${contact.pubkey}`,
-    icon: 'icons/icon.svg',
+    icon: 'icons/mycq-logo.png',
   });
 }
 
