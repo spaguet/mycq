@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mycq-static-v25';
+const CACHE_NAME = 'mycq-static-v26';
 const STATIC_ASSETS = [
   './',
   './index.html',
