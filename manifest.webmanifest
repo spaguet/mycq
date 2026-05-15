@@ -5,11 +5,11 @@
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#dff2c2",
-  "theme_color": "#bce987",
+  "background_color": "#f9f5ed",
+  "theme_color": "#f9bc27",
   "icons": [
     {
-      "src": "icons/mycq-logo.png",
+      "src": "icons/logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

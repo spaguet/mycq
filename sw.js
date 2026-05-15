@@ -1,11 +1,21 @@
-const CACHE_NAME = 'mycq-static-v26';
+const CACHE_NAME = 'mycq-static-v28';
 const STATIC_ASSETS = [
   './',
   './index.html',
   './styles.css',
   './app.js',
   './manifest.webmanifest',
-  './icons/mycq-logo.png',
+  './icons/logo.png',
+  './icons/icon-add.png',
+  './icons/icon-chat.png',
+  './icons/icon-exit.png',
+  './icons/icon-inbox.png',
+  './icons/icon-pen.png',
+  './icons/icon-person.png',
+  './icons/icon-send_arrow.png',
+  './icons/icon-settings.png',
+  './icons/icon-star.png',
+  './icons/icon-trash.png',
 ];
 
 self.addEventListener('install', (event) => {

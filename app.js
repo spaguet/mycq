@@ -73,7 +73,7 @@ function renderOnboarding() {
   app.innerHTML = `
     <section class="auth-shell">
       <div class="auth-hero">
-        <img class="app-logo auth-logo" src="icons/mycq-logo.png" alt="">
+        <img class="app-logo auth-logo" src="icons/logo.png" alt="">
         <h1>MyCQ</h1>
         <p>Личный децентрализованный мессенджер с зашифрованными сообщениями и контактами через Nostr.</p>
       </div>
@@ -233,7 +233,7 @@ function renderLogin() {
   app.innerHTML = `
     <section class="auth-shell">
       <div class="auth-hero">
-        <img class="app-logo auth-logo" src="icons/mycq-logo.png" alt="">
+        <img class="app-logo auth-logo" src="icons/logo.png" alt="">
         <h1>MyCQ</h1>
         <p>Профиль хранится локально. Введите пароль, чтобы расшифровать ключ.</p>
       </div>
@@ -283,32 +283,48 @@ function renderMessenger() {
         <aside class="contacts-panel">
           <div class="contacts-header">
             <div class="brand">
-              <img class="app-logo brand-logo" src="icons/mycq-logo.png" alt="">
-              <strong>MyCQ</strong>
+              <img class="app-logo brand-logo" src="icons/logo.png" alt="">
+              <div>
+                <strong>MyCQ</strong>
+                <span>${escapeHtml(state.profile.nickname)}</span>
+              </div>
             </div>
-            <button class="primary-action" type="button" id="addContactButton">+ Добавить</button>
+            <button class="chat-shortcut-button" type="button" title="Чаты"><img class="ui-icon" src="icons/icon-chat.png" alt=""></button>
           </div>
 
-          <div class="profile-card">
-            <div class="mini-avatar">${escapeHtml(getInitials(state.profile.nickname))}</div>
-            <div>
-              <div class="profile-name">${escapeHtml(state.profile.nickname)}</div>
-              <div class="status online">В сети</div>
-            </div>
-            <button class="profile-edit-button" type="button" id="editProfileButton" title="Изменить имя">✎</button>
+          <button class="primary-action" type="button" id="addContactButton">
+            <img class="ui-icon ui-icon-lg" src="icons/icon-add.png" alt="">
+            <span>Добавить контакт</span>
+          </button>
+
+          <label class="contact-search">
+            <img class="ui-icon ui-icon-muted" src="icons/icon-inbox.png" alt="">
+            <input type="search" placeholder="Поиск контактов">
+          </label>
+
+          <div class="contact-filter-row">
+            <button class="filter-tab active" type="button">Все <span>${state.contacts.length}</span></button>
+            <button class="filter-tab" type="button"><img class="filter-tab-icon" src="icons/icon-star.png" alt=""> Избранные</button>
           </div>
 
+          <div class="quick-access">
+            <strong>Быстрый доступ</strong>
+            <div class="quick-contact-row">
+              ${renderQuickContacts()}
+              <button class="quick-add-button" type="button" id="quickAddContactButton" title="Добавить контакт"><img class="ui-icon" src="icons/icon-add.png" alt=""></button>
+            </div>
+          </div>
+
+          <strong class="section-title">Контакты</strong>
           <ul class="contact-list">
             ${renderContacts()}
           </ul>
 
           <div class="identity-box">
-            <div class="dev-toolbar">
-              <button class="classic-button small" type="button" id="shareContactButton">Мой MyCQ UIN</button>
-              <button class="classic-button small secondary" type="button" id="browserNotificationsButton">${escapeHtml(getBrowserNotificationsButtonText())}</button>
-              <button class="classic-button small secondary" type="button" id="settingsButton">Настройки</button>
-              <button class="classic-button small secondary" type="button" id="lockButton">Выйти</button>
-            </div>
+            <button class="bottom-nav-button" type="button" id="shareContactButton"><img class="bottom-nav-icon" src="icons/icon-person.png" alt=""><b>Мой MyCQ UIN</b></button>
+            <button class="bottom-nav-button" type="button" id="browserNotificationsButton"><img class="bottom-nav-icon" src="icons/icon-inbox.png" alt=""><b>${escapeHtml(getBrowserNotificationsButtonText())}</b></button>
+            <button class="bottom-nav-button" type="button" id="settingsButton"><img class="bottom-nav-icon" src="icons/icon-settings.png" alt=""><b>Настройки</b></button>
+            <button class="bottom-nav-button" type="button" id="lockButton"><img class="bottom-nav-icon" src="icons/icon-exit.png" alt=""><b>Выйти</b></button>
           </div>
         </aside>
 
@@ -316,14 +332,14 @@ function renderMessenger() {
           <header class="chat-header">
             <div class="chat-identity">
               <button class="mobile-back-button" type="button" id="mobileBackButton">‹</button>
-              <img class="app-logo chat-logo" src="icons/mycq-logo.png" alt="">
+              <div class="chat-avatar header-avatar">${active ? escapeHtml(getInitials(active.nickname)) : 'MC'}</div>
               <div>
                 <h2 class="chat-title">${active ? escapeHtml(active.nickname) : 'Нет контакта'}</h2>
                 <span class="relay-status" id="relayStatus">${active ? escapeHtml(getContactOnlineText(active)) : escapeHtml(getRelayStatusText())}</span>
               </div>
             </div>
             <div class="chat-actions">
-              ${active ? '<button class="delete-contact-button" type="button" id="renameContactButton">Переименовать</button><button class="delete-contact-button" type="button" id="deleteContactButton">Удалить контакт</button>' : ''}
+              ${active ? `<button class="icon-square-button" type="button" id="renameContactButton" title="Переименовать"><img class="ui-icon" src="icons/icon-pen.png" alt=""></button><button class="icon-square-button" type="button" id="deleteContactButton" title="Удалить"><img class="ui-icon" src="icons/icon-trash.png" alt=""></button>` : ''}
             </div>
           </header>
 
@@ -333,7 +349,7 @@ function renderMessenger() {
 
           <form class="composer" id="messageForm">
             <textarea class="message-input" name="message" rows="1" placeholder="${canChat ? 'Введите сообщение...' : 'Сначала авторизуйте контакт'}" ${canChat ? '' : 'disabled'}></textarea>
-            <button class="send-button" type="submit" ${canChat ? '' : 'disabled'}>↗</button>
+            <button class="send-button" type="submit" ${canChat ? '' : 'disabled'} title="Отправить"><img class="ui-icon ui-icon-send" src="icons/icon-send_arrow.png" alt=""></button>
           </form>
         </section>
       </div>
@@ -341,11 +357,11 @@ function renderMessenger() {
   `;
 
   document.querySelector('#addContactButton').addEventListener('click', addContact);
+  document.querySelector('#quickAddContactButton')?.addEventListener('click', addContact);
   document.querySelector('#shareContactButton').addEventListener('click', openShareContact);
   document.querySelector('#browserNotificationsButton').addEventListener('click', toggleBrowserNotifications);
   document.querySelector('#settingsButton').addEventListener('click', openSettings);
   document.querySelector('#lockButton').addEventListener('click', lockProfile);
-  document.querySelector('#editProfileButton').addEventListener('click', editProfileName);
   const messageForm = document.querySelector('#messageForm');
   messageForm.addEventListener('submit', handleSendMessage);
   messageForm.message.addEventListener('keydown', handleMessageInputKeydown);
@@ -386,6 +402,14 @@ function renderMessenger() {
     });
   });
 
+  document.querySelectorAll('.quick-contact').forEach((item) => {
+    item.addEventListener('click', () => {
+      state.activeContact = state.contacts.find((contact) => contact.pubkey === item.dataset.pubkey);
+      state.mobileView = 'chat';
+      render();
+    });
+  });
+
   ensureNostrSync();
   scrollMessageHistoryToBottom();
 }
@@ -419,6 +443,21 @@ function renderContacts() {
       </li>
     `;
   }).join('');
+}
+
+function renderQuickContacts() {
+  const quickContacts = state.contacts.slice(0, 4);
+
+  if (quickContacts.length === 0) {
+    return '<span class="quick-empty">Нет контактов</span>';
+  }
+
+  return quickContacts.map((contact) => `
+    <button class="quick-contact" type="button" data-pubkey="${escapeHtml(contact.pubkey)}" title="${escapeHtml(contact.nickname)}">
+      <span class="chat-avatar">${escapeHtml(getInitials(contact.nickname))}</span>
+      <small>${escapeHtml(contact.nickname)}</small>
+    </button>
+  `).join('');
 }
 
 function renderMessages(active) {
@@ -1626,7 +1665,7 @@ function showBrowserNotification(contact, text) {
   new Notification('MyCQ', {
     body: `${contact.nickname}: ${text}`,
     tag: `mycq-${contact.pubkey}`,
-    icon: 'icons/mycq-logo.png',
+    icon: 'icons/logo.png',
   });
 }
 
